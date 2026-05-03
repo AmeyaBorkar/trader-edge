@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>trader-edge — pre-trade risk engine</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="brand">
+      <h1>trader-edge</h1>
+      <span class="tagline">Pre-trade risk engine &middot; Indian equities &amp; F&amp;O</span>
+    </div>
+    <nav class="topnav">
+      <a href="#analyze" data-tab="analyze" class="active">Analyze</a>
+      <a href="#chain"   data-tab="chain">Chain</a>
+      <a href="#journal" data-tab="journal">Journal</a>
+    </nav>
+    <div class="meta">
+      <span id="provider-badge">&middot;</span>
+      <span id="version-badge"></span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section id="view-analyze" class="view">
+
+    <div class="grid">
+      <aside class="panel form-panel">
+        <h2 class="rule">Trade</h2>
+        <form id="analyze-form">
+
+          <label>Symbol
+            <input list="symbol-list" name="symbol" id="symbol" required value="RELIANCE" autocomplete="off">
+            <datalist id="symbol-list"></datalist>
+          </label>
+
+          <div class="row">
+            <label>Entry
+              <input type="number" name="entry" id="entry" step="0.05" required value="2850">
+            </label>
+            <label>Quantity
+              <input type="number" name="quantity" id="quantity" step="1" min="1" required value="10">
+            </label>
+          </div>
+
+          <div class="row">
+            <label>Target
+              <input type="number" name="target" id="target" step="0.05" required value="3000">
+            </label>
+            <label>Stop
+              <input type="number" name="stop" id="stop" step="0.05" required value="2800">
+            </label>
+          </div>
+
+          <label>Horizon (trading days)
+            <input type="number" name="horizon_days" id="horizon_days" step="1" min="1" max="90" required value="5">
+          </label>
+
+          <button type="submit" class="primary">Run analysis</button>
+          <p class="form-help">All math runs server-side. No reasoning is delegated to a language model.</p>
+        </form>
+      </aside>
+
+      <article class="panel result-panel" id="result-panel" aria-live="polite">
+        <div class="placeholder">
+          <h2 class="rule">Result</h2>
+          <p class="muted">Submit a trade to see the noise stop check, options-chain oracle, joint Monte Carlo, and net expected value.</p>
+        </div>
+      </article>
+    </div>
+
+  </section>
+
+  <section id="view-chain" class="view hidden">
+    <div class="panel">
+      <h2 class="rule">Option chain</h2>
+      <form id="chain-form" class="inline">
+        <label>Symbol
+          <input list="symbol-list" name="csymbol" id="csymbol" value="RELIANCE">
+        </label>
+        <button type="submit">Fetch</button>
+      </form>
+      <div id="chain-result"></div>
+    </div>
+  </section>
+
+  <section id="view-journal" class="view hidden">
+    <div class="panel">
+      <h2 class="rule">Trade journal</h2>
+      <form id="journal-form" class="inline">
+        <label>Lookback (days)
+          <input type="number" name="days" id="jdays" min="1" max="365" value="30">
+        </label>
+        <button type="submit">Score</button>
+      </form>
+      <div id="journal-result"></div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="colophon">
+  <div class="wrap">
+    <span>&copy; trader-edge</span>
+    <span class="dot">&middot;</span>
+    <a href="/docs">API reference</a>
+    <span class="dot">&middot;</span>
+    <a href="https://github.com/AmeyaBorkar/trader-edge">Source</a>
+  </div>
+</footer>
+
+<script src="/static/app.js" defer></script>
+</body>
+</html>
