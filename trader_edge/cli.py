@@ -112,6 +112,88 @@ def journal(lookback_days: int, provider: str):
 
 
 @cli.command()
+@click.option("--log-path", type=click.Path(), default=None,
+              help="Override TRADER_EDGE_LOG_PATH (default ~/.trader_edge/log.csv)")
+@click.option("--limit", type=int, default=20, help="Show last N entries")
+@click.option("--stats", is_flag=True,
+              help="Print calibration stats only (skip the table)")
+def log(log_path: str | None, limit: int, stats: bool):
+    """Show recent logged analyses and calibration vs actual outcomes."""
+    from pathlib import Path
+    path = Path(log_path).expanduser() if log_path else default_log_path()
+    rows = read_log(path)
+    if not rows:
+        console.print(f"[dim]No log at {path}. Run `analyze` to start logging.[/dim]")
+        return
+
+    if not stats:
+        recent = rows[-limit:]
+        table = Table(title=f"Trade log — last {len(recent)} of {len(rows)}",
+                      caption=str(path), caption_justify="right")
+        table.add_column("Date", justify="left")
+        table.add_column("Symbol", justify="left")
+        table.add_column("Entry", justify="right")
+        table.add_column("Tgt/Stop", justify="right")
+        table.add_column("Pred EV/sh", justify="right")
+        table.add_column("Outcome", justify="left")
+        table.add_column("Actual P&L", justify="right")
+        table.add_column("Tag", justify="left")
+        for r in recent:
+            try:
+                ev = float(r.get("ev_rw_per_share", "0") or "0")
+            except ValueError:
+                ev = 0.0
+            ev_style = "green" if ev > 0 else "red" if ev < 0 else "white"
+            outcome = (r.get("actual_outcome") or "").strip()
+            actual_str = (r.get("actual_pnl") or "").strip()
+            try:
+                ap = float(actual_str) if actual_str else None
+            except ValueError:
+                ap = None
+            ap_style = ("green" if ap and ap > 0 else
+                        "red" if ap and ap < 0 else "white")
+            ap_disp = f"₹{ap:+.2f}" if ap is not None else "[dim]—[/dim]"
+            table.add_row(
+                r.get("timestamp", "")[:10],
+                r.get("symbol", ""),
+                r.get("entry", ""),
+                f"{r.get('target','')}/{r.get('stop','')}",
+                f"[{ev_style}]₹{ev:+.2f}[/{ev_style}]",
+                outcome or "[dim]—[/dim]",
+                ap_disp if ap is None else f"[{ap_style}]{ap_disp}[/{ap_style}]",
+                r.get("tag", "") or "",
+            )
+        console.print(table)
+
+    s = calibration(rows)
+    body = [
+        f"  Total entries:               {s.n_total}",
+        f"  With outcome filled:         {s.n_with_outcome} of {s.n_total}",
+        f"  Trades taken (not skipped):  {s.n_taken}",
+    ]
+    if s.n_taken > 0:
+        body += [
+            "",
+            f"  Avg predicted EV/share:      ₹{s.avg_predicted_ev:+.2f}",
+            f"  Avg actual P&L/share:        ₹{s.avg_actual_pnl_per_share:+.2f}",
+            f"  Direction accuracy:          {s.n_correct_direction}/{s.n_correct_direction + s.n_wrong_direction}",
+        ]
+        if s.correlation is not None:
+            corr_color = ("green" if s.correlation > 0.3
+                          else "red" if s.correlation < -0.1 else "yellow")
+            body.append(
+                f"  Predicted vs actual corr:    [{corr_color}]{s.correlation:+.3f}[/{corr_color}]"
+            )
+        else:
+            body.append("  Predicted vs actual corr:    (need ≥5 closed trades)")
+    if s.n_with_outcome < s.n_total:
+        body.append("")
+        body.append(f"[dim]Tip: edit {path.name} to fill 'actual_outcome' (win/loss/flat/skipped) and 'actual_pnl'.[/dim]")
+    console.print(Panel("\n".join(body), title="Calibration",
+                        border_style="cyan"))
+
+
+@cli.command()
 @click.argument("symbol")
 @click.option("--provider", default="auto",
               type=click.Choice(["auto", "mock", "groww"], case_sensitive=False))
