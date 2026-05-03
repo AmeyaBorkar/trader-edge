@@ -94,6 +94,28 @@ python -m trader_edge.cli journal --days 30
 python -m trader_edge.cli chain RELIANCE
 ```
 
+### Trade log + personal calibration
+
+Every `analyze` call appends a row to `~/.trader_edge/log.csv` (override with
+`TRADER_EDGE_LOG_PATH` or `--no-log` to opt out). After a trade closes, edit
+the CSV and fill in two columns:
+
+- `actual_outcome` — `win`, `loss`, `flat`, or `skipped`
+- `actual_pnl` — realized P&L in rupees (signed)
+
+Then check how well the engine's predictions calibrate against your actual
+results:
+
+```
+python -m trader_edge.cli log              # last 20 entries + summary
+python -m trader_edge.cli log --stats      # calibration only, no table
+```
+
+Once you have ≥5 closed trades, you'll see Pearson correlation between
+predicted EV/share and realized P&L/share. A correlation above 0.3 means the
+engine's edge calls track your real outcomes; below 0 means the model is
+miscalibrated for your universe and you should distrust the numbers.
+
 ### REST API + Web UI
 
 Start the server:
