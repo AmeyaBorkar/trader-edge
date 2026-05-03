@@ -31,6 +31,12 @@ from rich.text import Text
 from .analysis.journal import journal as journal_run
 from .analysis.pretrade import TradeRequest, analyze_trade
 from .analysis.suggestions import suggest_alternatives
+from .analysis.trade_log import (
+    append_verdict,
+    calibration,
+    default_log_path,
+    read_log,
+)
 from .api.base import DataProvider
 from .api.mock_provider import MockProvider
 
@@ -72,8 +78,13 @@ def cli():
 @click.option("--qty", "quantity", type=int, default=1)
 @click.option("--provider", default="auto",
               type=click.Choice(["auto", "mock", "groww"], case_sensitive=False))
+@click.option("--no-log", is_flag=True,
+              help="Skip appending this analysis to the trade log")
+@click.option("--tag", default="",
+              help="Optional label saved with this entry (e.g. setup name)")
 def analyze(symbol: str, entry: float, target: float, stop: float,
-            horizon_days: int, quantity: int, provider: str):
+            horizon_days: int, quantity: int, provider: str,
+            no_log: bool, tag: str):
     """Analyze a long-bracket trade: ANALYZE SYMBOL ENTRY TARGET STOP."""
     p = _resolve_provider(provider)
     req = TradeRequest(symbol=symbol.upper(), entry=entry, target=target,
@@ -83,6 +94,9 @@ def analyze(symbol: str, entry: float, target: float, stop: float,
     _render_verdict(verdict)
     if suggestions:
         _render_suggestions(suggestions)
+    if not no_log:
+        path = append_verdict(verdict, tag=tag)
+        console.print(f"[dim]Logged to {path}[/dim]")
 
 
 @cli.command()
