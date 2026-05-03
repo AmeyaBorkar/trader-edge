@@ -166,7 +166,24 @@ def log(log_path: str | None, limit: int, stats: bool):
         console.print(table)
 
     s = calibration(rows)
+    needed = 5
+
+    if s.n_taken == 0 and s.n_with_outcome == 0:
+        status = "[bold red]NOT CALIBRATED[/bold red]  (0 outcomes logged)"
+        border = "red"
+    elif s.n_taken == 0:
+        status = "[bold red]NOT CALIBRATED[/bold red]  (all entries marked skipped)"
+        border = "red"
+    elif s.n_taken < needed:
+        status = f"[bold yellow]BUILDING[/bold yellow]  ({s.n_taken} of {needed} closed trades needed)"
+        border = "yellow"
+    else:
+        status = f"[bold green]ACTIVE[/bold green]  ({s.n_taken} closed trades)"
+        border = "green"
+
     body = [
+        f"  Status:                      {status}",
+        "",
         f"  Total entries:               {s.n_total}",
         f"  With outcome filled:         {s.n_with_outcome} of {s.n_total}",
         f"  Trades taken (not skipped):  {s.n_taken}",
@@ -185,12 +202,18 @@ def log(log_path: str | None, limit: int, stats: bool):
                 f"  Predicted vs actual corr:    [{corr_color}]{s.correlation:+.3f}[/{corr_color}]"
             )
         else:
-            body.append("  Predicted vs actual corr:    (need ≥5 closed trades)")
+            remaining = needed - s.n_taken
+            body.append(
+                f"  Predicted vs actual corr:    [dim](need {remaining} more closed trades)[/dim]"
+            )
     if s.n_with_outcome < s.n_total:
         body.append("")
-        body.append(f"[dim]Tip: edit {path.name} to fill 'actual_outcome' (win/loss/flat/skipped) and 'actual_pnl'.[/dim]")
+        body.append(
+            f"[dim]Tip: edit {path.name} to fill 'actual_outcome' "
+            f"(win/loss/flat/skipped) and 'actual_pnl'.[/dim]"
+        )
     console.print(Panel("\n".join(body), title="Calibration",
-                        border_style="cyan"))
+                        border_style=border))
 
 
 @cli.command()
