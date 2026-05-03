@@ -130,19 +130,39 @@ API endpoints (all under `/api/v1`):
 }
 ```
 
+## Configuration
+
+All configuration is read from environment variables. For local development,
+copy the template and fill in what you need:
+
+```
+cp .env.example .env
+```
+
+Then edit `.env`. The file is git-ignored. The CLI and server both load it
+automatically on startup.
+
+| Variable               | Required | Default              | Purpose                                         |
+|------------------------|----------|----------------------|-------------------------------------------------|
+| `GROWW_ACCESS_TOKEN`   | for live | —                    | Bearer token from Groww developer console       |
+| `TRADER_EDGE_PROVIDER` | no       | `auto`               | Force `mock`, `groww`, or `auto`                |
+| `GROWW_API_BASE_URL`   | no       | `https://api.groww.in` | Override Groww REST base (sandbox or proxy)   |
+
+`auto` resolves to Groww if a token is present, otherwise mock. Real OS env
+vars take precedence over `.env` values, so production deployments can
+override settings without touching the file.
+
 ## Connecting your Groww account
 
-By default the CLI uses a deterministic mock provider. To use live data:
+1. Generate an access token from your Groww developer console (groww.in →
+   Settings → Trade API → Generate token).
+2. Put it in your `.env`:
 
-1. Generate an access token from your Groww developer console.
-2. Set the env var:
-
-   ```powershell
-   $env:GROWW_ACCESS_TOKEN = "your_token_here"
+   ```
+   GROWW_ACCESS_TOKEN=your_token_here
    ```
 
-3. Pass `--provider groww` (or just leave `--provider auto` — it will use
-   Groww if the token is set).
+3. Either restart the server, or for the CLI just run any command.
 
 Endpoints called (read-only):
 - `GET /v1/live-data/ltp`
