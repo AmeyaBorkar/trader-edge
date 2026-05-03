@@ -39,7 +39,13 @@ Python 3.11+. Dependencies: numpy, scipy, requests, click, rich, pytest.
 
 ## Use
 
-### Mode 1 — pre-trade analysis
+There are three ways to drive the engine, all backed by the same math core:
+
+1. **CLI** — fastest for ad-hoc analysis. `python -m trader_edge.cli analyze ...`
+2. **REST API** — for integration. `uvicorn trader_edge.server.main:app --reload`
+3. **Web UI** — minimalist newsprint-style frontend served at `/`.
+
+### Mode 1 — pre-trade analysis (CLI)
 
 ```
 python -m trader_edge.cli analyze RELIANCE 2850 3000 2800 --days 5 --qty 10
@@ -86,6 +92,42 @@ python -m trader_edge.cli journal --days 30
 
 ```
 python -m trader_edge.cli chain RELIANCE
+```
+
+### REST API + Web UI
+
+Start the server:
+
+```
+uvicorn trader_edge.server.main:app --reload --port 8000
+```
+
+Then:
+
+- **Web UI**: http://localhost:8000/  — analyze a trade, inspect chains, score your journal.
+- **API docs**: http://localhost:8000/docs  — auto-generated OpenAPI reference.
+
+API endpoints (all under `/api/v1`):
+
+| Method | Path                        | Purpose                                   |
+|--------|-----------------------------|-------------------------------------------|
+| GET    | `/health`                   | Server status, active provider, version   |
+| GET    | `/symbols`                  | List of supported symbols                 |
+| POST   | `/analyze`                  | Run pre-trade analysis on a long bracket  |
+| GET    | `/chain/{symbol}`           | Fetch the option chain                    |
+| GET    | `/journal?days=N`           | Score the user's recent orders            |
+
+`POST /analyze` body shape:
+
+```json
+{
+  "symbol": "RELIANCE",
+  "entry": 2850,
+  "target": 3000,
+  "stop": 2800,
+  "horizon_days": 5,
+  "quantity": 10
+}
 ```
 
 ## Connecting your Groww account
