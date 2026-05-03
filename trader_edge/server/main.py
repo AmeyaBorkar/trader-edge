@@ -10,6 +10,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from ..env import load_env
+load_env()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse

@@ -19,6 +19,9 @@ if sys.platform == "win32":
     except Exception:
         pass
 
+from .env import load_env
+load_env()
+
 import click
 from rich.console import Console
 from rich.panel import Panel
@@ -36,12 +39,17 @@ console = Console()
 
 def _resolve_provider(name: str) -> DataProvider:
     name = (name or "auto").lower()
+    if name == "auto":
+        # CLI flag has lowest precedence; env override wins so a user with a
+        # configured .env doesn't have to pass --provider every invocation.
+        env_choice = (os.environ.get("TRADER_EDGE_PROVIDER") or "").strip().lower()
+        if env_choice in ("mock", "groww"):
+            name = env_choice
     if name == "mock":
         return MockProvider()
     if name == "groww":
         from .api.groww_client import GrowwClient
         return GrowwClient()
-    # auto: prefer Groww if token present, else mock
     if os.environ.get("GROWW_ACCESS_TOKEN"):
         from .api.groww_client import GrowwClient
         return GrowwClient()
