@@ -16,6 +16,13 @@ from ..api.mock_provider import MockProvider
 
 @lru_cache(maxsize=1)
 def _get_provider() -> DataProvider:
+    explicit = (os.environ.get("TRADER_EDGE_PROVIDER") or "auto").strip().lower()
+    if explicit == "mock":
+        return MockProvider()
+    if explicit == "groww":
+        from ..api.groww_client import GrowwClient
+        return GrowwClient()
+    # auto
     if os.environ.get("GROWW_ACCESS_TOKEN"):
         from ..api.groww_client import GrowwClient
         return GrowwClient()

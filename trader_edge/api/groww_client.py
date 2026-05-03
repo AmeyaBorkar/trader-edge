@@ -20,16 +20,20 @@ import requests
 from .base import DataProvider
 from .models import Candle, OptionChain, OptionRow, Order
 
-BASE_URL = "https://api.groww.in"
+DEFAULT_BASE_URL = "https://api.groww.in"
 
 
 class GrowwClient(DataProvider):
-    def __init__(self, access_token: str | None = None, timeout: float = 10.0):
+    def __init__(self, access_token: str | None = None, timeout: float = 10.0,
+                 base_url: str | None = None):
         token = access_token or os.environ.get("GROWW_ACCESS_TOKEN")
         if not token:
             raise RuntimeError(
                 "No access token. Set GROWW_ACCESS_TOKEN env var or pass access_token=."
             )
+        self.base_url = (base_url
+                         or os.environ.get("GROWW_API_BASE_URL")
+                         or DEFAULT_BASE_URL).rstrip("/")
         self.session = requests.Session()
         self.session.headers.update({
             "Authorization": f"Bearer {token}",
@@ -39,7 +43,7 @@ class GrowwClient(DataProvider):
         self.timeout = timeout
 
     def _get(self, path: str, params: dict | None = None) -> dict:
-        url = f"{BASE_URL}{path}"
+        url = f"{self.base_url}{path}"
         r = self.session.get(url, params=params, timeout=self.timeout)
         r.raise_for_status()
         return r.json()
